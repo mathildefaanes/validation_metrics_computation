@@ -6,6 +6,7 @@ import numpy as np
 import nibabel as nib
 from typing import Tuple, List
 from PIL import Image
+import SimpleITK as sitk
 
 
 def get_fold_from_file(filename, fold_number):
@@ -71,6 +72,19 @@ def open_image_file(input_filename: str) -> Tuple[np.ndarray, str, List]:
     elif ext in [".tif", ".tiff", ".png"]:
         input_array = Image.open(input_filename)
         input_specifics = [np.eye(4, dtype=int), [1., 1.]]
+    elif ext == ".mhd":
+        # To fix problem with TransformMatrix = 1 0 0 0 1 0 0 0 1 for 2D images
+        # Reading mhd file and creating a temporary copy without TransformMatrix = 1 0 0 0 1 0 0 0 1
+        with open(input_filename, 'r') as f:
+            lines = f.readlines()
+        filtred_lines = [line for line in lines if not line.startswith('TransformMatrix')]
+        temp_file_path = input_filename.replace('.mhd', '_temp.mhd')
+        with open(temp_file_path, 'w') as ft:
+            ft.writelines(filtred_lines)
+        input_img = sitk.ReadImage(temp_file_path)
+        input_array = sitk.GetArrayFromImage(input_img)
+        input_specifics = [input_img.GetDirection(), input_img.GetSpacing()]
+        os.remove(temp_file_path)
     else:
         logging.error("Working with an unknown file type: {}. Skipping...".format(ext))
 
@@ -84,5 +98,11 @@ def save_image_file(output_array, output_filename: str, specifics: List = None) 
         nib.save(nib.Nifti1Image(output_array, affine=specifics[0]), output_filename)
     elif ext in [".tif", ".tiff", ".png"]:
         Image.fromarray(output_array).save(output_filename)
+    elif ext == ".mhd":
+        image = sitk.GetImageFromArray(output_array)
+        image.SetSpacing(specifics[1])
+        image.SetDirection(specifics[0])
+        image.SetOrigin([0.0,0.0])
+        sitk.WriteImage(image, output_filename)
     else:
         logging.error("Working with an unknown file type: {}. Skipping...".format(ext))

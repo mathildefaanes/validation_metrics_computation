@@ -53,6 +53,7 @@ class SharedResources:
         self.validation_gt_files_suffix = []
         self.validation_prediction_files_suffix = []
         self.validation_use_index_naming_convention = True
+        self.validation_use_aipocus_naming_convention = True
         self.validation_nb_folds = 5
         self.validation_split_way = 'two-way'
         self.validation_metric_spaces = []
@@ -179,6 +180,12 @@ class SharedResources:
             if self.config['Validation']['use_index_naming_convention'].split('#')[0].strip() != '':
                 self.validation_use_index_naming_convention = True \
                     if self.config['Validation']['use_index_naming_convention'].split('#')[0].strip().lower() == 'true'\
+                    else False
+
+        if self.config.has_option('Validation', 'use_AI_POCUS_naming_convention'):
+            if self.config['Validation']['use_AI_POCUS_naming_convention'].split('#')[0].strip() != '':
+                self.validation_use_aipocus_naming_convention = True \
+                    if self.config['Validation']['use_AI_POCUS_naming_convention'].split('#')[0].strip().lower() == 'true'\
                     else False
 
         if self.config.has_option('Validation', 'nb_folds'):

@@ -173,20 +173,32 @@ class ModelValidation:
 
             # Annoying, but independent of extension
             # @TODO. must load images with SimpleITK to be completely generic.
-            detection_image_base = os.path.join(self.input_folder, 'predictions', str(fold_number), uid)
+            detection_image_base = os.path.join(self.input_folder, 'predictions', str(fold_number))
             if folder_index is not None:
                detection_image_base = os.path.join(self.input_folder, 'predictions', str(fold_number),
                                                    folder_index + '_' + uid)
 
             detection_filename = None
-            for _, _, files in os.walk(detection_image_base):
-                for f in files:
-                    if pred_suffix in f:
-                        if use_internal_convention and patient_metrics.patient_id.split('_')[1] in f:
-                            detection_filename = os.path.join(detection_image_base, f)
-                        elif not use_internal_convention:
-                            detection_filename = os.path.join(detection_image_base, f)
-                break
+            # If AI POCUS naming convention and folder structure
+            if SharedResources.getInstance().validation_use_aipocus_naming_convention:
+                detection_filename = os.path.join(detection_image_base, uid.split("_")[0], uid.split("_")[1], uid.split("_")[2], uid.split("_")[3]+"_"+uid.split("_")[4].replace(".mhd", pred_suffix))
+                # for recording in os.listdir(detection_image_base):
+                #     for f in os.listdir(os.path.join(detection_image_base, recording)):
+                #         if pred_suffix in f:
+                #             if use_internal_convention and patient_metrics.patient_id.split('_')[1] in f:
+                #                 detection_filename = os.path.join(detection_image_base, recording, f)
+                #             elif not use_internal_convention:
+                #                 detection_filename = os.path.join(detection_image_base, recording, f)
+                #     break
+            else:
+                for _, _, files in os.walk(detection_image_base):
+                    for f in files:
+                        if pred_suffix in f:
+                            if use_internal_convention and patient_metrics.patient_id.split('_')[1] in f:
+                                detection_filename = os.path.join(detection_image_base, f)
+                            elif not use_internal_convention:
+                                detection_filename = os.path.join(detection_image_base, f)
+                    break
             if not os.path.exists(detection_filename):
                 print("No detection file found for class {} in patient {}".format(c, patient_metrics.unique_id))
                 return False
@@ -204,10 +216,18 @@ class ModelValidation:
                     if os.path.basename(patient_image_base) in f:
                         patient_image_filename = os.path.join(os.path.dirname(patient_image_base), f)
                 break
+            # If AI POCUS naming convention and folder structure, NB! 512x512 size on images
+            if SharedResources.getInstance().validation_use_aipocus_naming_convention:
+                patient_image_filename = os.path.join(self.data_root, uid.split("_")[0], uid.split("_")[1], uid.split("_")[2], uid.split("_")[3]+"_"+uid.split("_")[4].replace(".mhd", "_512.mhd"))
+
 
             ground_truth_base = os.path.join(self.data_root, uid, patient_extended)
             if folder_index is not None:
                 ground_truth_base = os.path.join(self.data_root, folder_index, uid, 'segmentations', patient_extended)
+
+            # If AI POCUS naming convention and folder structure
+            # if SharedResources.getInstance().validation_use_aipocus_naming_convention:
+            #     ground_truth_base = os.path.join(self.data_root, uid.split('_')[0], uid.split('_')[1])
 
             ground_truth_filename = None
             for _, _, files in os.walk(os.path.dirname(ground_truth_base)):
@@ -216,6 +236,16 @@ class ModelValidation:
                         ground_truth_filename = os.path.join(os.path.dirname(ground_truth_base), f)
                 break
 
+            # If AI POCUS naming convention and folder structure
+            if SharedResources.getInstance().validation_use_aipocus_naming_convention:
+                ground_truth_filename = patient_image_filename.replace("_512.mhd", gt_suffix)
+
+                # for recording in os.listdir(ground_truth_base):
+                #     if detection_filename.split("/")[-2] in recording:
+                #         for f in os.listdir(os.path.join(ground_truth_base,recording)):
+                #             if os.path.basename(detection_filename).split("_")[1] in f and gt_suffix in f:
+                #                 ground_truth_filename = os.path.join(ground_truth_base, recording, f)
+                #         break
             # Specific actions for remapping BraTS results to match the whole tumor and tumor core categories
             if SharedResources.getInstance().validation_use_brats_data and (classes[c] == 'whole' or classes[c] == 'core'):
                 detection_ni = nib.load(detection_filename)
