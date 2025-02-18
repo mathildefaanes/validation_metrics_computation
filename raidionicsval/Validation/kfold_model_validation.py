@@ -181,7 +181,7 @@ class ModelValidation:
             detection_filename = None
             # If AI POCUS naming convention and folder structure
             if SharedResources.getInstance().validation_use_aipocus_naming_convention:
-                detection_filename = os.path.join(detection_image_base, uid.split("_")[0], uid.split("_")[1], uid.split("_")[2], uid.split("_")[3]+"_"+uid.split("_")[4].replace(".mhd", pred_suffix))
+                detection_filename = os.path.join(detection_image_base, uid.split("__")[0], uid.split("__")[1], uid.split("__")[2], uid.split("__")[3].replace(".mhd", pred_suffix))
                 # for recording in os.listdir(detection_image_base):
                 #     for f in os.listdir(os.path.join(detection_image_base, recording)):
                 #         if pred_suffix in f:
@@ -218,7 +218,7 @@ class ModelValidation:
                 break
             # If AI POCUS naming convention and folder structure, NB! 512x512 size on images
             if SharedResources.getInstance().validation_use_aipocus_naming_convention:
-                patient_image_filename = os.path.join(self.data_root, uid.split("_")[0], uid.split("_")[1], uid.split("_")[2], uid.split("_")[3]+"_"+uid.split("_")[4].replace(".mhd", "_512.mhd"))
+                patient_image_filename = os.path.join(self.data_root, uid.split("__")[0], uid.split("__")[1], uid.split("__")[2], uid.split("__")[3].replace(".mhd", "_512.mhd"))
 
 
             ground_truth_base = os.path.join(self.data_root, uid, patient_extended)
